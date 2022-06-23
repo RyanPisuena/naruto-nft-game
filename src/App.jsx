@@ -1,5 +1,9 @@
+import {CONTRACT_ADDRESS} from './constants'
+
 import React, { useEffect, useState } from 'react';
 import './App.css';
+import SelectCharacter from './Components/SelectCharacter';
+
 import twitterLogo from './assets/twitter-logo.svg';
 
 // Constants
@@ -9,8 +13,9 @@ const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 const App = () => {
   // State
   const [currentAccount, setCurrentAccount] = useState(null);
-
-  // Actions
+  const [characterNFT, setCharacterNFT] = useState(null);
+  
+  // Checks to see if the Metamask wallet is connected
   const checkIfWalletIsConnected = async () => {
     try {
       const { ethereum } = window;
@@ -36,9 +41,32 @@ const App = () => {
     }
   };
 
-  /*
-   * Implement your connectWallet method here
-   */
+
+// Method for rendering content
+const renderContent = () => {
+  // If user has has not connected to your app - Show Connect To Wallet Button
+  if(!currentAccount) {
+    return (
+          <div className="connect-wallet-container">
+            <img          src="https://media.giphy.com/media/bKDPrNojOoeu4/giphy.gif"
+              alt="Team 7 Gif"
+            />
+            <button
+              className="cta-button connect-wallet-button"
+              onClick={connectWalletAction}>
+              Connect Wallet To Get Started
+            </button>
+          </div>
+    );
+  }
+
+ //If user has connected to your app AND does not have a character NFT - Show SelectCharacter Component   
+  else if(currentAccount && !characterNFT) {
+    return <SelectCharacter />;
+  }
+};
+  
+// Connects wallet
   const connectWalletAction = async () => {
     try {
       const { ethereum } = window;
@@ -73,24 +101,9 @@ const App = () => {
     <div className="App">
       <div className="container">
         <div className="header-container">
-          <p className="header gradient-text">⚔️ Metaverse Slayer ⚔️</p>
-          <p className="sub-text">Team up to protect the Metaverse!</p>
-          <div className="connect-wallet-container">
-            <img
-              src="https://media.giphy.com/media/bKDPrNojOoeu4/giphy.gif"
-              alt="Team 7 Gif"
-            />
-            {/*
-             * Button that we will use to trigger wallet connect
-             * Don't forget to add the onClick event to call your method!
-             */}
-            <button
-              className="cta-button connect-wallet-button"
-              onClick={connectWalletAction}
-            >
-              Connect Wallet To Get Started
-            </button>
-          </div>
+          <p className="header gradient-text">⚔️ Team 7 Game ⚔️</p>
+          <p className="sub-text"> Naruto Turn Based Adventure</p>
+          {renderContent()}
         </div>
         <div className="footer-container">
           <img alt="Twitter Logo" className="twitter-logo" src={twitterLogo} />
