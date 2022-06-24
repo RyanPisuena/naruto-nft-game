@@ -1,5 +1,14 @@
-import {CONTRACT_ADDRESS} from './constants'
 
+// For importing th ABI file
+import myEpicGame from './utils/MyEpicGame.json';
+
+// Importing the address for the deployed contracted
+import { CONTRACT_ADDRESS, transformCharacterData } from './constants'
+
+// Bringing in Ethers so we can interact with the deployed contract
+import { ethers } from 'ethers';
+
+// React related imports
 import React, { useEffect, useState } from 'react';
 import './App.css';
 import SelectCharacter from './Components/SelectCharacter';
@@ -10,11 +19,12 @@ import twitterLogo from './assets/twitter-logo.svg';
 const TWITTER_HANDLE = '_buildspace';
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
+// App component and related functions
 const App = () => {
   // State
   const [currentAccount, setCurrentAccount] = useState(null);
   const [characterNFT, setCharacterNFT] = useState(null);
-  
+
   // Checks to see if the Metamask wallet is connected
   const checkIfWalletIsConnected = async () => {
     try {
@@ -42,31 +52,31 @@ const App = () => {
   };
 
 
-// Method for rendering content
-const renderContent = () => {
-  // If user has has not connected to your app - Show Connect To Wallet Button
-  if(!currentAccount) {
-    return (
-          <div className="connect-wallet-container">
-            <img          src="https://media.giphy.com/media/bKDPrNojOoeu4/giphy.gif"
-              alt="Team 7 Gif"
-            />
-            <button
-              className="cta-button connect-wallet-button"
-              onClick={connectWalletAction}>
-              Connect Wallet To Get Started
+  // Method for rendering content
+  const renderContent = () => {
+    // If user has has not connected to your app - Show Connect To Wallet Button
+    if (!currentAccount) {
+      return (
+        <div className="connect-wallet-container">
+          <img src="https://media.giphy.com/media/bKDPrNojOoeu4/giphy.gif"
+            alt="Team 7 Gif"
+          />
+          <button
+            className="cta-button connect-wallet-button"
+            onClick={connectWalletAction}>
+            Connect Wallet To Get Started
             </button>
-          </div>
-    );
-  }
+        </div>
+      );
+    }
 
- //If user has connected to your app AND does not have a character NFT - Show SelectCharacter Component   
-  else if(currentAccount && !characterNFT) {
-    return <SelectCharacter />;
-  }
-};
-  
-// Connects wallet
+    //If user has connected to your app AND does not have a character NFT - Show SelectCharacter Component   
+    else if (currentAccount && !characterNFT) {
+      return <SelectCharacter />;
+    }
+  };
+
+  // Connects wallet
   const connectWalletAction = async () => {
     try {
       const { ethereum } = window;
@@ -95,7 +105,54 @@ const renderContent = () => {
 
   useEffect(() => {
     checkIfWalletIsConnected();
+
+    const checkNetwork = async () => {
+      try {
+        if (window.ethereum.networkVersion !== '4') {
+          alert("Please connect to Rinkeby!")
+        }
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
   }, []);
+
+  useEffect(() => {
+    /*
+     * The function we will call that interacts with our smart contract
+     */
+    const fetchNFTMetadata = async () => {
+      console.log('Checking for Character NFT on address:', currentAccount);
+
+      // What we use to talk to the Ethereum nodes
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      // Abstracting an eth account to sign the game transaction
+      const signer = provider.getSigner();
+      const gameContract = new ethers.Contract(
+        CONTRACT_ADDRESS,
+        myEpicGame.abi,
+        signer
+      );
+
+      const txn = await gameContract.checkIfUserHasNFT();
+      if (txn.name) {
+        console.log('User has character NFT');
+        setCharacterNFT(transformCharacterData(txn));
+      } else {
+        console.log('No character NFT found');
+      }
+    };
+
+    /*
+     * We only want to run this, if we have a connected wallet
+     */
+    if (currentAccount) {
+      console.log('CurrentAccount:', currentAccount);
+      fetchNFTMetadata();
+    }
+  }, [currentAccount]);
+
 
   return (
     <div className="App">
