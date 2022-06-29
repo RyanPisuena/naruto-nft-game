@@ -11,7 +11,11 @@ import { ethers } from 'ethers';
 // React related imports
 import React, { useEffect, useState } from 'react';
 import './App.css';
+
+import Arena from './Components/Arena';
 import SelectCharacter from './Components/SelectCharacter';
+import LoadingIndicator from './Components/LoadingIndicator';
+
 
 import twitterLogo from './assets/twitter-logo.svg';
 
@@ -21,9 +25,12 @@ const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
 // App component and related functions
 const App = () => {
-  // State
+  // Account states
   const [currentAccount, setCurrentAccount] = useState(null);
+  // Character states
   const [characterNFT, setCharacterNFT] = useState(null);
+  //Loading states
+  const [isLoading, setIsLoading] = useState(false);
 
   // Checks to see if the Metamask wallet is connected
   const checkIfWalletIsConnected = async () => {
@@ -31,6 +38,10 @@ const App = () => {
       const { ethereum } = window;
 
       if (!ethereum) {
+        /*
+         * We set isLoading here because we use return in the next line
+         */
+        setIsLoading(false);
         console.log('Make sure you have MetaMask!');
         return;
       } else {
@@ -49,11 +60,18 @@ const App = () => {
     } catch (error) {
       console.log(error);
     }
+
+    setIsLoading(false);
   };
 
 
   // Method for rendering content
   const renderContent = () => {
+
+    if (isLoading) {
+      return <LoadingIndicator />;
+    }
+
     // If user has has not connected to your app - Show Connect To Wallet Button
     if (!currentAccount) {
       return (
@@ -73,6 +91,9 @@ const App = () => {
     //If user has connected to your app AND does not have a character NFT - Show SelectCharacter Component   
     else if (currentAccount && !characterNFT) {
       return <SelectCharacter />;
+    } else if (currentAccount && characterNFT) {
+      <Arena characterNFT={characterNFT} setCharacterNFT={setCharacterNFT} />
+
     }
   };
 
@@ -104,6 +125,7 @@ const App = () => {
   };
 
   useEffect(() => {
+    setIsLoading(true);
     checkIfWalletIsConnected();
 
     const checkNetwork = async () => {
@@ -138,11 +160,13 @@ const App = () => {
       const txn = await gameContract.checkIfUserHasNFT();
       if (txn.name) {
         console.log('User has character NFT');
-        setCharacterNFT(transformCharacterData(txn));
+        setCharacterNFT(transformCharacterData(characterNFT));
       } else {
         console.log('No character NFT found');
       }
     };
+
+    setIsLoading(false);
 
     /*
      * We only want to run this, if we have a connected wallet
@@ -158,7 +182,7 @@ const App = () => {
     <div className="App">
       <div className="container">
         <div className="header-container">
-          <p className="header gradient-text">⚔️ Team 7 Game ⚔️</p>
+          <p className="header gradient-text">🗡️ Team 7 Game 🗡️</p>
           <p className="sub-text"> Naruto Turn Based Adventure</p>
           {renderContent()}
         </div>
